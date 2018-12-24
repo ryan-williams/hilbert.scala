@@ -13,7 +13,6 @@ abstract class Hilbert[
   val n: Int
 )(
    implicit
-   default: Step,
    _steps: InstanceMap[Step],
    point: FromInts[Point],
    fixed: FromInt [Point]
@@ -69,10 +68,10 @@ abstract class Hilbert[
 
   def apply(n: Int): Point = apply(n, 0)
   private def apply(
-       n:   Int           ,
-    from: Point           ,
-    step:  Step = default ,
-       Σ:   Int =       1 ,
+       n:   Int            ,
+    from: Point            ,
+    step:  Step = steps(0) ,
+       Σ:   Int =       1  ,
   ):
     Point =
   {
