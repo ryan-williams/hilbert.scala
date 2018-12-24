@@ -1,6 +1,8 @@
 package com.runsascoded.hilbert
 
 import com.runsascoded.hilbert
+import hammerlab.iterator._
+import hammerlab.shapeless._
 import runsascoded.math._
 
 trait Point[Step, P <: Point[Step, P]] {
@@ -33,12 +35,24 @@ abstract class Hilbert[
 ](
   n: Int
 )(
-  implicit
-  default: Step,
-  point: FromInts[Point],
-  fixed: FromInt [Point]
+   implicit
+   default: Step,
+   _steps: InstanceMap[Step],
+   point: FromInts[Point],
+   fixed: FromInt [Point]
 ) {
-  def step(n: Int): Step
+
+  val steps: Vector[Step] =
+    _steps()
+      .values
+      .toVector
+      .sortBy(
+        _
+          .getClass
+          .getSimpleName
+      )
+
+  @inline def step(n: Int): Step = steps(n % this.n)
 
   val N: Int = pow(2, n)
   val ↷ : Map[Int, Point] =
@@ -51,9 +65,9 @@ abstract class Hilbert[
                 .map {
                   b ⇒ (i & (1 << b)) >> b
                 }
-                .sliding(2)
+                .sliding2
                 .map {
-                  case Seq(cur, next) ⇒ cur ^ next
+                  case (cur, next) ⇒ cur ^ next
                 }
                 .toVector
             )

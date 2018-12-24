@@ -1,6 +1,5 @@
-import com.runsascoded.hilbert
+import com.runsascoded.hilbert.three
 
 package object hilbert {
-  object `2` extends hilbert.`2`
-  object `3` extends hilbert.`3`
+  val `3` = three.default
 }

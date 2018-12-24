@@ -5,8 +5,6 @@ import com.runsascoded.hilbert.Hilbert
 object default
 extends Hilbert[Point, Step](3)
 {
-  def step(n: Int): Step = Step(n)
-
   def ⟳(p: Point, % : Int, Σ: Int): Point = {
     import p.{ x, y, z }
     % match {

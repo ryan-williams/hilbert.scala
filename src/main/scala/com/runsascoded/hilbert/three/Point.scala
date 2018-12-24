@@ -20,19 +20,14 @@ case class Point(x: Int, y: Int, z: Int)
     m(m(x, y), z)
   }
 
-  def /%(p: Point) = (
-    this / p,
-    this % p
-  )
-
-  def >>(step: Step): Point =
+  @inline def >>(step: Step): Point =
     step match {
       case `0` ⇒ this
       case `1` ⇒ >
       case `2` ⇒ >>
     }
 
-  def <<(step: Step): Point =
+  @inline def <<(step: Step): Point =
     step match {
       case `0` ⇒ this
       case `1` ⇒ >>
@@ -41,7 +36,6 @@ case class Point(x: Int, y: Int, z: Int)
 
   def  > = Point(z, x, y)
   def >> = Point(y, z, x)
-  def  < = Point(y, z, x)
 
   override def toString: String = s"($x,$y,$z)"
 }
