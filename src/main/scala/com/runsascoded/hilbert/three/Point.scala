@@ -12,6 +12,10 @@ case class Point(x: Int, y: Int, z: Int) {
   import math.{ abs => | }
   def abs = Point(|(x), |(y), |(z))
   def seq = Vector(x, y, z)
+  def max = {
+    import math.{ max ⇒ m }
+    m(m(x, y), z)
+  }
 
   def /%(n: Point) = (
     this / n,
@@ -51,4 +55,10 @@ object Step {
   object `0` extends Step("xyz") { def next = `1` }
   object `1` extends Step("zxy") { def next = `2` }
   object `2` extends Step("yzx") { def next = `0` }
+  def apply(n: Int): Step =
+    n % 3 match {
+      case 0 ⇒ `0`
+      case 1 ⇒ `1`
+      case 2 ⇒ `2`
+    }
 }
