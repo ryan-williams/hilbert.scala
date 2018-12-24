@@ -1,25 +1,25 @@
 package com.runsascoded.hilbert
 
-import com.runsascoded.hilbert
-import com.runsascoded.utils.FromInts
+import com.runsascoded.utils.{ FromInts, Ints }
 import org.hammerlab.cmp.Cmp
 
 import math.abs
 
 abstract class Test[
-  Point <: hilbert.Point[Step, Point],
-   Step <: hilbert. Step[Step       ],
+  Point,
       D
 ](
-  h: Hilbert[Point, Step],
+  h: Hilbert[Point],
   expecteds: Seq[Point],
   N: Int = 1 << 6
 )(
   implicit
-  cmp: Cmp.Aux[Point, D],
+    cmp: Cmp.Aux[Point, D],
+   ints: Ints[Point],
   point: FromInts[Point]
 )
 extends hammerlab.Suite
+   with Ints.syntax
 {
   for {
     (i, p) ← expecteds.zipWithIndex.map(_.swap)
@@ -66,7 +66,7 @@ extends hammerlab.Suite
   }
 
   test("diffs") {
-    val expected = Vector.fill(n - 1)(0) ++ Vector(1)
+    val expected = List.fill(n - 1)(0) ++ List(1)
     (1 to pow(N))
       .foldLeft(h(0)) {
         (prev, i) ⇒

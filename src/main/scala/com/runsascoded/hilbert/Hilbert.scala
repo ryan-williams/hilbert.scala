@@ -1,35 +1,21 @@
 package com.runsascoded.hilbert
 
-import com.runsascoded.hilbert
-import com.runsascoded.utils.{ FromInt, FromInts }
+import com.runsascoded.utils.{ FromInts, Ints }
 import hammerlab.iterator._
 import hammerlab.shapeless._
 import runsascoded.math._
 
 abstract class Hilbert[
-  Point <: hilbert.Point[Step, Point],
-   Step <: hilbert. Step[Step       ]
+  Point
 ](
   val n: Int
 )(
    implicit
-   _steps: InstanceMap[Step],
-   point: FromInts[Point],
-   fixed: FromInt [Point]
-) {
-
-  val steps: Vector[Step] =
-    _steps()
-      .values
-      .toVector
-      .sortBy(
-        _
-          .getClass
-          .getSimpleName
-      )
-
-  @inline def step(n: Int): Step = steps(n % this.n)
-
+    ints: Ints[Point],
+   point: FromInts[Point]
+)
+extends Ints.syntax
+{
   val N: Int = pow(2)
   val ↷ : Map[Int, Point] =
     (0 until N)
@@ -68,10 +54,10 @@ abstract class Hilbert[
 
   def apply(n: Int): Point = apply(n, 0)
   private def apply(
-       n:   Int            ,
-    from: Point            ,
-    step:  Step = steps(0) ,
-       Σ:   Int =       1  ,
+       n:   Int     ,
+    from: Point     ,
+    step:   Int = 0 ,
+       Σ:   Int = 1 ,
   ):
     Point =
   {
@@ -88,27 +74,24 @@ abstract class Hilbert[
       apply(
         /,
         next,
-        step ++,
+        step + 1,
         Σ * 2
       )
   }
 
   def apply(p: Point): Int = {
     val (pow, n) = p.max.log(2)
-    val step = this.step(n)
-    apply(p >> step, pow, n)
+    apply(p >> n, pow, n)
   }
 
   private def apply(p: Point, Σ: Int, n: Int): Int = {
     if (n < 0)
       0
     else {
-      val (top, rest) = p /% Σ
+      val (top, rest) = p /% ints.int(Σ)
       val Δ = ↶(top)
       val next = ⟲(rest, Δ, Σ-1)
       pow(Σ) * Δ + apply(next, Σ / 2, n - 1)
     }
   }
-
-  @inline implicit def pointFromInt(n: Int): Point = fixed(n)
 }

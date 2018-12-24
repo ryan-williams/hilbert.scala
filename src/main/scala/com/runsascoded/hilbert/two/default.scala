@@ -3,7 +3,7 @@ package com.runsascoded.hilbert.two
 import com.runsascoded.hilbert.Hilbert
 
 object default
-extends Hilbert[Point, Step](2)
+extends Hilbert[Point](2)
 {
   def ⟳(p: Point, % : Int, Σ: Int): Point = {
     import p.{ x, y }
