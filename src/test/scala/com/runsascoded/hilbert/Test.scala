@@ -1,9 +1,9 @@
 package com.runsascoded.hilbert
 
-import com.runsascoded.utils.{ FromInts, Ints }
+import com.runsascoded.utils.{ GenInts, Ints }
 import org.hammerlab.cmp.Cmp
 
-import math.abs
+import scala.math.abs
 
 abstract class Test[
   Point,
@@ -14,9 +14,9 @@ abstract class Test[
   N: Int = 1 << 6
 )(
   implicit
-    cmp: Cmp.Aux[Point, D],
-   ints: Ints[Point],
-  point: FromInts[Point]
+   cmp: Cmp.Aux[Point, D],
+  ints: Ints[Point],
+   gen: GenInts[Point]
 )
 extends hammerlab.Suite
    with Ints.syntax
@@ -49,18 +49,14 @@ extends hammerlab.Suite
       } yield
         head :: tail
 
-  import h.{ pow, n }
+  import h.{ n, pow }
 
   test("coverage") {
     ==(
-      (
-        for { i ← 0 until pow(N) } yield {
-          h(i)
-        }
-      )
-      .toSet,
-      seqs(N)
-        .map(point(_))
+      (0 until pow(N))
+        .map(h(_))
+        .toSet,
+      gen(N)
         .toSet
     )
   }

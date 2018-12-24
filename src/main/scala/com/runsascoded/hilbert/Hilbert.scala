@@ -1,6 +1,6 @@
 package com.runsascoded.hilbert
 
-import com.runsascoded.utils.{ FromInts, Ints }
+import com.runsascoded.utils.{ GenInts, Ints }
 import hammerlab.iterator._
 import hammerlab.shapeless._
 import runsascoded.math._
@@ -11,31 +11,44 @@ abstract class Hilbert[
   val n: Int
 )(
    implicit
-    ints: Ints[Point],
-   point: FromInts[Point]
+   ints:    Ints[Point],
+    gen: GenInts[Point],
 )
 extends Ints.syntax
 {
   val N: Int = pow(2)
+
+  // Define basic block on {0,1}^N; indices are built by xor'ing adjacent dimensions' coordinates and summing the result
   val ↷ : Map[Int, Point] =
-    (0 until N)
+    gen(2)
       .map {
-        i ⇒
-          i →
-            point(
-              (0 to n)
-                .map {
-                  b ⇒ (i & (1 << b)) >> b
-                }
-                .sliding2
-                .map {
-                  case (cur, next) ⇒ cur ^ next
-                }
-                .toVector
-            )
+        p ⇒
+          val (i, _) =
+            p
+              .seq
+              .foldRight(
+                (
+                  0,  // add to this result, bit by bit starting from most-significat ("left") bit
+                  0   // last bit seen
+                )
+              ) {
+                case (
+                  cur,
+                  (res, last)
+                ) ⇒
+                  val shifted = res << 1
+                  val next = last ^ cur
+                  (
+                    shifted + next,
+                    next
+                  )
+              }
+
+          i → p
       }
       .toMap
 
+  // Reversed map
   val ↶ : Map[Point, Int] =
     for {
       (k, v) ← ↷
