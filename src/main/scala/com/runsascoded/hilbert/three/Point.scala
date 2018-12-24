@@ -4,9 +4,14 @@ import Step._
 
 case class Point(x: Int, y: Int, z: Int) {
   def +(p: Point) = Point(x + p.x, y + p.y, z + p.z)
+  def -(p: Point) = Point(x - p.x, y - p.y, z - p.z)
   def *(p: Point) = Point(x * p.x, y * p.y, z * p.z)
   def /(p: Point) = Point(x / p.x, y / p.y, z / p.z)
   def %(p: Point) = Point(x % p.x, y % p.y, z % p.z)
+
+  import math.{ abs => | }
+  def abs = Point(|(x), |(y), |(z))
+  def seq = Vector(x, y, z)
 
   def /%(n: Point) = (
     this / n,
@@ -29,6 +34,7 @@ case class Point(x: Int, y: Int, z: Int) {
 
   def  > = Point(z, x, y)
   def >> = Point(y, z, x)
+  def  < = Point(y, z, x)
 
   override def toString: String = s"($x,$y,$z)"
 }
@@ -37,11 +43,12 @@ object Point {
   implicit def fromInt(n: Int): Point = Point(n, n, n)
 }
 
-sealed abstract class Step(val next: Step, override val toString: String) {
+sealed abstract class Step(override val toString: String) {
+  def next: Step
   def ++ = next
 }
 object Step {
-  object `0` extends Step(`1`, "xyz")
-  object `1` extends Step(`2`, "zxy")
-  object `2` extends Step(`0`, "yzx")
+  object `0` extends Step("xyz") { def next = `1` }
+  object `1` extends Step("zxy") { def next = `2` }
+  object `2` extends Step("yzx") { def next = `0` }
 }

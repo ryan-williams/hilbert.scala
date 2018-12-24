@@ -5,12 +5,16 @@ import runsascoded.math._
 trait to {
 
   def Δ(% : Int): Point =
+    //( (n&1)^(n&2), (n&2)^(n&4), n&4 )
     % match {
       case 0 ⇒ (0, 0, 0)
       case 1 ⇒ (1, 0, 0)
       case 2 ⇒ (1, 1, 0)
       case 3 ⇒ (0, 1, 0)
-      case 4|5|6|7 ⇒ Δ(N - 1 - %) + (0,0,1)
+      case 4 ⇒ (0, 1, 1)
+      case 5 ⇒ (1, 1, 1)
+      case 6 ⇒ (1, 0, 1)
+      case 7 ⇒ (0, 0, 1)
     }
 
   def ↺(p: Point, % : Int, Σ: Int): Point = {
@@ -48,7 +52,7 @@ trait to {
     else
       apply(
         /,
-        next << step,
+        next,
         step ++,
         Σ * 2
       )
