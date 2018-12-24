@@ -1,11 +1,11 @@
 package com.runsascoded.utils
 
 import shapeless._
+import nat._
 import shapeless.ops.hlist._
-import shapeless.ops.nat.ToInt
 
 trait Ints[T] {
-  def n: Int
+  val n: Int
   def +(l: T, r: T): T
   def -(l: T, r: T): T
   def *(l: T, r: T): T
@@ -30,18 +30,16 @@ object Ints {
   implicit val hnil: Ints[HNil] =
     new Ints[HNil] {
       val n = 0
-      @inline def   +(l: HNil, r: HNil) = HNil
-      @inline def   -(l: HNil, r: HNil) = HNil
-      @inline def   *(l: HNil, r: HNil) = HNil
-      @inline def   /(l: HNil, r: HNil) = HNil
-      @inline def   %(l: HNil, r: HNil) = HNil
-      @inline def seq(l: HNil         ) =  Nil
-      @inline def int(n: Int          ) = HNil
+      def   +(l: HNil, r: HNil) = HNil
+      def   -(l: HNil, r: HNil) = HNil
+      def   *(l: HNil, r: HNil) = HNil
+      def   /(l: HNil, r: HNil) = HNil
+      def   %(l: HNil, r: HNil) = HNil
+      def seq(l: HNil         ) =  Nil
+      def int(n: Int          ) = HNil
       def <<(l: HNil, n: Int) = HNil
       def >>(l: HNil, n: Int) = HNil
     }
-
-  import nat._1
 
   implicit def cons[L <: HList](
     implicit
@@ -54,13 +52,13 @@ object Ints {
     new Ints[Int :: L] {
       val n = tail.n + 1
       type T = Int :: L
-      @inline def   +(l: T, r: T): T = (l.head + r.head) :: tail.+(l.tail, r.tail)
-      @inline def   -(l: T, r: T): T = (l.head - r.head) :: tail.-(l.tail, r.tail)
-      @inline def   *(l: T, r: T): T = (l.head * r.head) :: tail.*(l.tail, r.tail)
-      @inline def   /(l: T, r: T): T = (l.head / r.head) :: tail./(l.tail, r.tail)
-      @inline def   %(l: T, r: T): T = (l.head % r.head) :: tail.%(l.tail, r.tail)
-      @inline def seq(l: T): List[Int] = scala.::(l.head, tail.seq(l.tail))
-      @inline def int(n: Int): T = n :: tail.int(n)
+      def   +(l: T, r: T): T = (l.head + r.head) :: tail.+(l.tail, r.tail)
+      def   -(l: T, r: T): T = (l.head - r.head) :: tail.-(l.tail, r.tail)
+      def   *(l: T, r: T): T = (l.head * r.head) :: tail.*(l.tail, r.tail)
+      def   /(l: T, r: T): T = (l.head / r.head) :: tail./(l.tail, r.tail)
+      def   %(l: T, r: T): T = (l.head % r.head) :: tail.%(l.tail, r.tail)
+      def seq(l: T): List[Int] = scala.::(l.head, tail.seq(l.tail))
+      def int(n: Int): T = n :: tail.int(n)
 
       def <<(l: T, n: Int): T = if (n > this.n) <<(l, n % this.n) else if (n > this.n - n) >>(l, this.n - n) else if (n == 0) l else <<(l.rotateLeft (1), n - 1)
       def >>(l: T, n: Int): T = if (n > this.n) >>(l, n % this.n) else if (n > this.n - n) <<(l, this.n - n) else if (n == 0) l else <<(l.rotateRight(1), n - 1)
@@ -75,13 +73,13 @@ object Ints {
   =
     new Ints[T] {
       val n = ints.n
-      @inline def   +(l: T, r: T): T = g.from(ints.+(g.to(l), g.to(r)))
-      @inline def   -(l: T, r: T): T = g.from(ints.-(g.to(l), g.to(r)))
-      @inline def   *(l: T, r: T): T = g.from(ints.*(g.to(l), g.to(r)))
-      @inline def   /(l: T, r: T): T = g.from(ints./(g.to(l), g.to(r)))
-      @inline def   %(l: T, r: T): T = g.from(ints.%(g.to(l), g.to(r)))
-      @inline def seq(l: T): List[Int] = ints.seq(g.to(l))
-      @inline def int(n: Int): T = g.from(ints.int(n))
+      def   +(l: T, r: T): T = g.from(ints.+(g.to(l), g.to(r)))
+      def   -(l: T, r: T): T = g.from(ints.-(g.to(l), g.to(r)))
+      def   *(l: T, r: T): T = g.from(ints.*(g.to(l), g.to(r)))
+      def   /(l: T, r: T): T = g.from(ints./(g.to(l), g.to(r)))
+      def   %(l: T, r: T): T = g.from(ints.%(g.to(l), g.to(r)))
+      def seq(l: T): List[Int] = ints.seq(g.to(l))
+      def int(n: Int): T = g.from(ints.int(n))
       def <<(l: T, n: Int) : T = g.from(ints.<<(g.to(l), n))
       def >>(l: T, n: Int) : T = g.from(ints.>>(g.to(l), n))
     }
