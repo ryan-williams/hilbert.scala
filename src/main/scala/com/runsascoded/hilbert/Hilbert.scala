@@ -13,7 +13,10 @@ trait Point[Step, P <: Point[Step, P]] {
   def %(p: P): P
 
   def /%(p: P): (P, P) = (this / p, this % p)
-  def max: Int
+
+  def max: Int = seq.max
+  def seq: Vector[Int]
+
   def <<(step: Step): P
   def >>(step: Step): P
 }
@@ -33,7 +36,7 @@ abstract class Hilbert[
   Point <: hilbert.Point[Step, Point],
    Step <: hilbert. Step[Step       ]
 ](
-  n: Int
+  val n: Int
 )(
    implicit
    default: Step,
@@ -54,7 +57,7 @@ abstract class Hilbert[
 
   @inline def step(n: Int): Step = steps(n % this.n)
 
-  val N: Int = pow(2, n)
+  val N: Int = pow(2)
   val ↷ : Map[Int, Point] =
     (0 until N)
       .map {
@@ -80,10 +83,11 @@ abstract class Hilbert[
     } yield
       v → k
 
+  // TODO: formalize that these are inverses of one another
   def ⟲(p: Point, % : Int, Σ: Int): Point
   def ⟳(p: Point, % : Int, Σ: Int): Point
 
-  def pow(Σ: Int, n: Int): Int =
+  def pow(Σ: Int, n: Int = this.n): Int =
     if (n == 0)
       1
     else
@@ -129,7 +133,7 @@ abstract class Hilbert[
       val (top, rest) = p /% Σ
       val Δ = ↶(top)
       val next = ⟲(rest, Δ, Σ-1)
-      pow(Σ, this.n) * Δ + apply(next, Σ / 2, n - 1)
+      pow(Σ) * Δ + apply(next, Σ / 2, n - 1)
     }
   }
 

@@ -16,10 +16,9 @@ extends Hilbert[Point, Step](3)
     }
   }
 
-  // TODO: formalize that these are inverses of one another
-  def ⟲(p: Point, Δ: Int, Σ: Int): Point = {
+  def ⟲(p: Point, % : Int, Σ: Int): Point = {
     import p.{ x, y, z }
-    Δ match {
+    % match {
       case     0 ⇒ P(   y,   z,   x )
       case 1 | 2 ⇒ P(   z,   x,   y )
       case 3 | 4 ⇒ P( Σ-y, Σ-x,   z )
