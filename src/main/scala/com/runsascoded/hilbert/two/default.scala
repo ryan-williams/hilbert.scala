@@ -9,7 +9,7 @@ extends Hilbert[Point](2)
     import p.{ x, y }
     % match {
       case     0 ⇒ P(   y,   x )
-      case 1 | 2 ⇒ P(   x,   y )
+      case 1 | 2 ⇒ p
       case     3 ⇒ P( Σ-y, Σ-x )
     }
   }
