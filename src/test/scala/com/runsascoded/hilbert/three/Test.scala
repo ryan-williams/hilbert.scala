@@ -1,9 +1,10 @@
 package com.runsascoded.hilbert.three
 
-import hilbert._
-
 class Test
   extends hammerlab.Suite {
+
+//  import hilbert._
+  val `3` = default
 
   val expecteds =
     Seq(

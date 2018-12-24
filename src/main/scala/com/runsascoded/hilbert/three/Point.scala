@@ -1,8 +1,11 @@
 package com.runsascoded.hilbert.three
 
+import com.runsascoded.hilbert
 import Step._
+import com.runsascoded.hilbert.{ FromInt, FromInts }
 
-case class Point(x: Int, y: Int, z: Int) {
+case class Point(x: Int, y: Int, z: Int)
+  extends hilbert.Point[Step, Point] {
   def +(p: Point) = Point(x + p.x, y + p.y, z + p.z)
   def -(p: Point) = Point(x - p.x, y - p.y, z - p.z)
   def *(p: Point) = Point(x * p.x, y * p.y, z * p.z)
@@ -17,9 +20,9 @@ case class Point(x: Int, y: Int, z: Int) {
     m(m(x, y), z)
   }
 
-  def /%(n: Point) = (
-    this / n,
-    this % n
+  def /%(p: Point) = (
+    this / p,
+    this % p
   )
 
   def >>(step: Step): Point =
@@ -43,18 +46,18 @@ case class Point(x: Int, y: Int, z: Int) {
   override def toString: String = s"($x,$y,$z)"
 }
 object Point {
-  implicit def apply(t: (Int, Int, Int)): Point = Point(t._1, t._2, t._3)
-  implicit def fromInt(n: Int): Point = Point(n, n, n)
+  implicit val fromInt : FromInt [Point] = {                n  ⇒ Point(n, n, n) }
+  implicit val fromInts: FromInts[Point] = { case Seq(x, y, z) ⇒ Point(x, y, z) }
 }
 
-sealed abstract class Step(override val toString: String) {
-  def next: Step
-  def ++ = next
-}
+sealed abstract class Step(override val toString: String)
+  extends hilbert.Step[Step]
+
 object Step {
-  object `0` extends Step("xyz") { def next = `1` }
-  object `1` extends Step("zxy") { def next = `2` }
-  object `2` extends Step("yzx") { def next = `0` }
+  implicit
+  object `0` extends Step("xyz") { def ++ = `1` }
+  object `1` extends Step("zxy") { def ++ = `2` }
+  object `2` extends Step("yzx") { def ++ = `0` }
   def apply(n: Int): Step =
     n % 3 match {
       case 0 ⇒ `0`
