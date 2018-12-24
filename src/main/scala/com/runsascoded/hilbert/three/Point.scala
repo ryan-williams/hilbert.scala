@@ -2,7 +2,7 @@ package com.runsascoded.hilbert.three
 
 import com.runsascoded.hilbert
 import Step._
-import com.runsascoded.hilbert.{ FromInt, FromInts }
+import com.runsascoded.utils.{ FromInt, FromInts }
 
 case class Point(
   x: Int,

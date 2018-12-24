@@ -1,7 +1,9 @@
 package com.runsascoded.hilbert
 
 import com.runsascoded.hilbert
+import com.runsascoded.utils.FromInts
 import org.hammerlab.cmp.Cmp
+
 import math.abs
 
 abstract class Test[

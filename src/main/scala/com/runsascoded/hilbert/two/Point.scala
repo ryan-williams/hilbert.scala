@@ -1,7 +1,7 @@
 package com.runsascoded.hilbert.two
 
 import com.runsascoded.hilbert
-import com.runsascoded.hilbert.{ FromInt, FromInts }
+import com.runsascoded.utils.{ FromInt, FromInts }
 
 case class Point(
   x: Int,
