@@ -24,6 +24,7 @@ sealed abstract class Size(
   val n2 = 1 << (2*n)  // virtual RGB-cube edge-length
   val n3 = 1 << (3*n)  // color-squares per side
   val n6 = 1 << (6*n)  // total number of color-squares
+  override def toString: String = n.toString
 }
 object Size {
   object `1` extends Size(1)

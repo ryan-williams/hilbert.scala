@@ -19,8 +19,8 @@ object Style
 
   val thumb =
     style(
-       width(80 px),
-      height(80 px),
+       width(120 px),
+      height(120 px),
     )
 
   val panel =
@@ -34,9 +34,14 @@ object Style
       paddingTop(10 px)
     )
 
+  val active = style("active")(
+    backgroundColor(darkgray)
+  )
+
   val sizeButton =
     style(
-      marginRight(5 px)
+      marginRight(5 px),
+      fontSize(1.5 em)
     )
 
   val canvas =
