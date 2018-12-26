@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -e
+
+bucket=gs://hilbert/colors
+
+default=web/target/scala-2.12/scalajs-bundler/main/web-fastopt-bundle.js
+
+if [ $# -eq 0 ]; then
+	"$0" "$default"
+	exit 0
+fi
+
+for arg in "$@"; do
+	remote="${arg#web/}"
+	dest="$bucket/$remote"
+	echo "Uploading: $remote"
+	gsutil -h Cache-Control:private cp "$arg" "$dest" && gsutil acl ch -u AllUsers:R "$dest"
+done

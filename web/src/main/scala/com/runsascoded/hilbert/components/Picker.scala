@@ -227,12 +227,12 @@ object Picker {
 
             div(
               Style.buttons,
-              button(Permutation(0, 1, 2), "RGB"),
-              button(Permutation(0, 2, 1), "RBG"),
-              button(Permutation(1, 0, 2), "GRB"),
-              button(Permutation(1, 2, 0), "GBR"),
-              button(Permutation(2, 0, 1), "BRG"),
-              button(Permutation(2, 1, 0), "BGR"),
+              button(Permutation(0, 1, 2), "rgb"),
+              button(Permutation(0, 2, 1), "rbg"),
+              button(Permutation(1, 0, 2), "grb"),
+              button(Permutation(1, 2, 0), "gbr"),
+              button(Permutation(2, 0, 1), "brg"),
+              button(Permutation(2, 1, 0), "bgr"),
             )
           }
         )
