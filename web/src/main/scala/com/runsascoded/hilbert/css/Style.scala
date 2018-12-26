@@ -41,7 +41,8 @@ object Style
   val sizeButton =
     style(
       marginRight(5 px),
-      fontSize(1.5 em)
+      fontSize(1.5 em),
+      padding(0.2 em, 0.4 em),
     )
 
   val canvas =

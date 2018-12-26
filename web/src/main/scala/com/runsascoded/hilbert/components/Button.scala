@@ -12,7 +12,7 @@ import scalacss.ScalaCssReact._
 object Button {
   case class Props(
     size: Size,
-    active: Size,
+    pressed: Boolean,
     label: String,
     fn: (Sizes ⇒ Sizes) ⇒ Callback
   )
@@ -21,11 +21,11 @@ object Button {
     ScalaComponent
       .builder[Props]("button")
       .render_P {
-        case Props(size, active, label, fn) ⇒
+        case Props(size, pressed, label, fn) ⇒
           button(
             label,
             Style.sizeButton,
-            ^.className := s"button-$size ${if (active == size) "active" else ""}",
+            ^.className := s"button-$size ${if (pressed) "active" else ""}",
             ^.onMouseEnter --> fn(_.copy(hover =   size)),
             ^.onMouseLeave --> fn(_.copy(hover = None )),
             ^.onClick      --> fn(_.copy(click =   size)),

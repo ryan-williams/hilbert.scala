@@ -110,7 +110,7 @@ object Picker {
         Button.component(
           Button.Props(
             sz,
-            size,
+            sizes.click.contains(sz),
             label,
             fn ⇒ modState(_.copy(sizes = fn(sizes)))
           )
@@ -241,7 +241,8 @@ object Picker {
           setState(
             state.copy(
               canvas = c,
-              color = Color(0, 0, 0)
+              color = Color(0, 0, 0),
+              sizes = Sizes(click = sz)
             )
           )
       }
