@@ -1,8 +1,9 @@
 package com.runsascoded.hilbert.components
 
-import com.runsascoded.hilbert.components.Picker.{ Canvas, Size }
 import com.runsascoded.hilbert.css.Style
+import com.runsascoded.hilbert.mix.Size
 import com.runsascoded.hilbert.{ three, two }
+import com.runsascoded.utils.Ints
 import hilbert._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^.<._
@@ -12,24 +13,13 @@ import org.scalajs.dom.raw.ImageData
 import org.scalajs.dom.{ CanvasRenderingContext2D, html }
 import scalacss.ScalaCssReact._
 
-import scala.scalajs.js
-
 object Picker {
 
 //  val size = 800
 
-  case class Color(r: Int, g: Int, b: Int)
 //  sealed trait Color
 //  case class RGB(r: Int, g: Int, b: Int) extends Color
 //  case class HSV(h: Int, s: Int, v: Int) extends Color
-
-  case class Canvas(
-    elem: html.Canvas,
-    imgs: Map[Size, ImageData],
-    ctx: CanvasRenderingContext2D,
-    w: Int,
-    h: Int
-  )
 
   case class State(
       size: Option[  Size] = None,
@@ -37,53 +27,37 @@ object Picker {
      color: Option[ Color] = None
   )
 
-  /**
-   *
-   *
-   * @param n 1, 2, 3, or 4 (corresponding to 64**n colors displayed; 64**4 == 2**24 is the full 3-byte color-space
-   */
-  sealed abstract class Size(
-    val n: Int
-  ) {
-    val n2 = 1 << (2*n)  // virtual RGB-cube edge-length
-    val n3 = 1 << (3*n)  // color-squares per side
-    val n6 = 1 << (6*n)  // total number of color-squares
-  }
-  object Size {
-    object `1` extends Size(1)
-    object `2` extends Size(2)
-    object `3` extends Size(3)
-    object `4` extends Size(4)
-    def unapply(size: Size): Option[(Int, Int, Int, Int)] = {
-      import size._
-      (
-        n,
-        n2,
-        n3,
-        n6
-      )
-    }
-  }
   implicit def liftOpt[T](t: T): Option[T] = Some(t)
 
-  class Backend($: BackendScope[Size, State]) {
+  class Backend($: BackendScope[Size, State]) extends Ints.syntax {
     import $.modState
+
+    def color(c: Int, r: Int, n: Int, n2: Int): Color = {
+      val three.P(_r, _g, _b) =
+        `3`(
+          `2`(
+            two.P(c, r) >> (n - 1)
+          )
+        ) >> (2*n - 1)
+      Color(
+        _r * 255 / (n2 - 1),
+        _g * 255 / (n2 - 1),
+        _b * 255 / (n2 - 1)
+      )
+    }
 
     def draw(canvas: Canvas, sz: Size): Option[ImageData] = {
       val Size(n, n2, n3, _) = sz
       val Canvas(_, imgs, ctx, w, h) = canvas
       imgs
         .get(sz)
-        .fold {
+        .fold[Option[ImageData]] {
           val img = ctx.createImageData(w, h)
           val data = img.data
           for {
             r ← 0 until n3
             c ← 0 until n3
-            three.P(_r, _g, _b) = `3`(`2`(two.P(c, r)))
-            red = _r * 255 / (n2 - 1)
-            green = _g * 255 / (n2 - 1)
-            blue = _b * 255 / (n2 - 1)
+            Color(red, green, blue) = color(c, r, n, n2)
             (x1, x2) = (c * w / n3, (c+1) * w / n3)
             (y1, y2) = (r * h / n3, (r+1) * h / n3)
             x ← x1 until x2
@@ -97,7 +71,7 @@ object Picker {
           }
 
           ctx.putImageData(img, 0, 0)
-          Some(img): Option[ImageData]
+          Some(img)
         } {
           img ⇒
             ctx.putImageData(img, 0, 0)
@@ -105,26 +79,32 @@ object Picker {
         }
     }
 
-    def setSize(canvas: Option[Canvas], sz: Size): Callback = {
-      val img = canvas.flatMap {
-        draw(_, sz)
-      }
+    /**
+     * Set new dimensions for the canvas, and trigger state updates as necessary
+     *
+     * The <canvas> is not a well-behaved component or element; it is mutated by updating the `data` buffers of
+     * [[ImageData]]s stored in [[Canvas.imgs]]
+     */
+    def setSize(canvas: Canvas, sz: Size): Callback = {
+      val img = draw(canvas, sz)
+
       modState(
-        img.fold[State ⇒ State] {
-          _.copy(size = sz)
-        } {
-          img ⇒
-            _.copy(
-              canvas =
-                canvas.map(
-                  c ⇒ c.copy(
-                    imgs =
-                      c.imgs ++ Map(sz → img)
-                  )
-                ),
-              size = sz
-            )
-        }
+        img
+          .fold[State ⇒ State] {
+            _.copy(size = sz)
+          } {
+            img ⇒
+              _.copy(
+                canvas =
+                  canvas.map(
+                    c ⇒ c.copy(
+                      imgs =
+                        c.imgs ++ Map(sz → img)
+                    )
+                  ),
+                size = sz
+              )
+          }
       )
     }
 
@@ -148,11 +128,7 @@ object Picker {
                   val r = y * n3 / h toInt
 
                   import hilbert._
-                  val three.P(_r, _g, _b) = `3`(`2`(two.P(c, r)))
-                  val   red = _r * 255 / (n2 - 1)
-                  val green = _g * 255 / (n2 - 1)
-                  val  blue = _b * 255 / (n2 - 1)
-                  val color = Color(red, green, blue)
+                  val color = this.color(c, r, n, n2)
 
                   $.modState(_.copy(color = color))
               }
@@ -178,32 +154,50 @@ object Picker {
                 ),
                 pre(
                   Style.pre,
-                  Seq(r, g, b)
-                    .map {
-                      n ⇒
-                        val s = "%02x".format(n)
-                        if (s.apply(0) == s.apply(1))
-                          s.drop(1)
-                        else
-                          s
-                    }
+                  {
+                    val hexs =
+                      Seq(r, g, b)
+                        .map { "%02x".format(_) }
+
+                    (
+                      // shorten to one-char hex-strings if all colors' hex-strings allow it (i.e. are two copies of the
+                      // same character)
+                      if (
+                        hexs.forall {
+                          s ⇒ s.apply(0) == s.apply(1)
+                        }
+                      )
+                        hexs.map(_.drop(1))
+                      else
+                        hexs
+                    )
                     .mkString("#", "", "")
+                  }
                 )
               )
           },
-          div(
-            Style.buttons,
-            button(
-              "8x8",
-              Style.sizeButton,
-              ^.onMouseEnter --> setSize(canvas, `1`)
-            ),
-            button(
-              "64x64",
-              Style.sizeButton,
-              ^.onMouseEnter --> setSize(canvas, `2`)
-            ),
-          )
+          canvas
+            .map {
+              canvas ⇒
+                div(
+                  Style.buttons,
+                  button(
+                    "8x8",
+                    Style.sizeButton,
+                    ^.onMouseEnter --> setSize(canvas, `1`)
+                  ),
+                  button(
+                    "64x64",
+                    Style.sizeButton,
+                    ^.onMouseEnter --> setSize(canvas, `2`)
+                  ),
+                  button(
+                    "512x512",
+                    Style.sizeButton,
+                    ^.onMouseEnter --> setSize(canvas, `3`)
+                  ),
+                )
+            }
         )
       )
     }
