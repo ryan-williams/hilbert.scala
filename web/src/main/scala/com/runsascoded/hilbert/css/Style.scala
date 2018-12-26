@@ -34,9 +34,11 @@ object Style
       paddingTop(10 px)
     )
 
-  val active = style("active")(
+  val pressed = style("pressed")(
     backgroundColor(darkgray)
   )
+
+  val none = style()
 
   val sizeButton =
     style(

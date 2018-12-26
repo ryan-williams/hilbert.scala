@@ -3,6 +3,7 @@ package com.runsascoded.hilbert.components
 import com.runsascoded.hilbert.css.Style
 import com.runsascoded.hilbert.mix.Size
 import com.runsascoded.hilbert.{ three, two }
+import com.runsascoded.math.Permutation
 import com.runsascoded.utils.Ints
 import hilbert._
 import japgolly.scalajs.react._
@@ -12,6 +13,7 @@ import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.{ HTMLElement, ImageData }
 import org.scalajs.dom.{ CanvasRenderingContext2D, html }
 import scalacss.ScalaCssReact._
+import shapeless.the
 
 import scala.collection.mutable
 
@@ -23,31 +25,43 @@ object Picker {
 //  case class RGB(r: Int, g: Int, b: Int) extends Color
 //  case class HSV(h: Int, s: Int, v: Int) extends Color
 
-  case class Sizes(
-    hover: Option[Size] = None,
-    click: Option[Size] = None
+  case class Preview[T](
+    hover: Option[T] = None,
+    click: Option[T] = None
   ) {
-    def size: Option[Size] = hover.orElse(click)
+    def t: Option[T] = click.orElse(hover) //hover.orElse(click)
   }
-  object Sizes {
-    implicit def size(sizes: Sizes): Option[Size] = sizes.size
+  object Preview {
+    implicit def unwrap[T](preview: Preview[T]): Option[T] = preview.t
   }
 
+  type Sizes = Preview[Size]
+  val Sizes = Preview
+
+  type Permutations = Preview[Permutation]
+  val Permutations = Preview
+
   case class State(
-     sizes: Sizes = Sizes(),
-    canvas: Option[Canvas] = None,
-     color: Option[ Color] = None
+           sizes:          Sizes  = Sizes(),
+    permutations:   Permutations  = Permutations(),
+          canvas:  Option[Canvas] = None,
+           color:  Option[ Color] = None
   )
+
+  case class Drawn(size: Size, permutation: Permutation)
+  object Drawn {
+    implicit def wrap(implicit size: Size, permutation: Permutation): Drawn = Drawn(size, permutation)
+  }
 
   class Backend($: BackendScope[Size, State])
     extends Ints.syntax {
 
     import $.modState
 
-    var drawn: Option[Size] = None
-    val imgs = mutable.Map[Size, ImageData]()
+    var drawnStatus: Option[Drawn] = None
+    val imgs = mutable.Map[Drawn, ImageData]()
 
-    def color(c: Int, r: Int, n: Int, n2: Int): Color = {
+    def color(c: Int, r: Int, n: Int, n2: Int)(implicit permutation: Permutation): Color = {
       val three.P(_r, _g, _b) =
         `3`(
           `2`(
@@ -65,16 +79,19 @@ object Picker {
         _r * 255 / (n2 - 1),
         _g * 255 / (n2 - 1),
         _b * 255 / (n2 - 1)
+      )(
+        permutation
       )
     }
 
-    def draw(canvas: Canvas, sz: Size) = {
-      val Size(n, n2, n3, _) = sz
+    def draw(canvas: Canvas)(implicit size: Size, permutation: Permutation) = {
+      val Size(n, n2, n3, _) = size
       val Canvas(_, ctx, w, h) = canvas
+      val drawn = the[Drawn]
       val img =
         imgs
           .getOrElseUpdate(
-            sz,
+            drawn,
             {
               val img = ctx.createImageData(w, h)
               val data = img.data
@@ -99,28 +116,19 @@ object Picker {
           )
 
       ctx.putImageData(img, 0, 0)
-      drawn = Some(sz)
+      drawnStatus = Some(drawn)
     }
 
     def render(props: Size, s: State): VdomElement = {
-      val State(sizes, canvas, color) = s
-      val size @ Size(n, n2, n3, _) = sizes.size.getOrElse(props)
-
-      def button(sz: Size, label: String) =
-        Button.component(
-          Button.Props(
-            sz,
-            sizes.click.contains(sz),
-            label,
-            fn ⇒ modState(_.copy(sizes = fn(sizes)))
-          )
-        )
+      val State(sizes, permutations, canvas, color) = s
+      implicit val size @ Size(n, n2, n3, _) = sizes.t.getOrElse(props)
+      implicit val permutation = permutations.t.getOrElse(Permutation(0, 1, 2))
 
       for {
         canvas ← canvas
-        if !drawn.contains(size)
+        if !drawnStatus.contains(Drawn(size, permutation))
       } {
-        draw(canvas, size)
+        draw(canvas)
       }
 
       import Size._
@@ -186,12 +194,47 @@ object Picker {
                 )
               )
           },
-          div(
-            Style.buttons,
-            button(`1`, "8x8"),
-            button(`2`, "64x64"),
-            button(`3`, "512x512"),
-          )
+          {
+            def button(sz: Size, label: String) =
+              Button[Size](
+                Button.Props(
+                  sz,
+                  size == sz,
+                  sizes.click.contains(sz),
+                  label,
+                  fn ⇒ modState(_.copy(sizes = fn(sizes)))
+                )
+              )
+
+            div(
+              Style.buttons,
+              button(`1`, "8x8"),
+              button(`2`, "64x64"),
+              button(`3`, "512x512"),
+            )
+          },
+          {
+            def button(p: Permutation, label: String) =
+              Button[Permutation](
+                Button.Props(
+                  p,
+                  p == permutation,
+                  permutations.click.contains(p),
+                  label,
+                  fn ⇒ modState(_.copy(permutations = fn(permutations)))
+                )
+              )
+
+            div(
+              Style.buttons,
+              button(Permutation(0, 1, 2), "RGB"),
+              button(Permutation(0, 2, 1), "RBG"),
+              button(Permutation(1, 0, 2), "GRB"),
+              button(Permutation(1, 2, 0), "GBR"),
+              button(Permutation(2, 0, 1), "BRG"),
+              button(Permutation(2, 1, 0), "BGR"),
+            )
+          }
         )
       )
     }
@@ -228,7 +271,7 @@ object Picker {
               .getContext("2d")
               .asInstanceOf[CanvasRenderingContext2D]
 
-          val sz = state.sizes.size.getOrElse(props)
+          val sz = state.sizes.t.getOrElse(props)
 
           val c =
             Canvas(
@@ -242,7 +285,8 @@ object Picker {
             state.copy(
               canvas = c,
               color = Color(0, 0, 0),
-              sizes = Sizes(click = sz)
+              sizes = Sizes(hover = sz),
+              permutations = Permutations(hover = Permutation(0, 1, 2))
             )
           )
       }

@@ -1,8 +1,7 @@
 package com.runsascoded.hilbert.components
 
-import com.runsascoded.hilbert.components.Picker.Sizes
+import com.runsascoded.hilbert.components.Picker.Preview
 import com.runsascoded.hilbert.css.Style
-import com.runsascoded.hilbert.mix.Size
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^.<._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -10,25 +9,33 @@ import org.scalajs.dom.raw.HTMLElement
 import scalacss.ScalaCssReact._
 
 object Button {
-  case class Props(
-    size: Size,
+  case class Props[T](
+    t: T,
     pressed: Boolean,
+    clicked: Boolean,
     label: String,
-    fn: (Sizes ⇒ Sizes) ⇒ Callback
+    fn: (Preview[T] ⇒ Preview[T]) ⇒ Callback
   )
 
-  val component =
+  def apply[T] =
     ScalaComponent
-      .builder[Props]("button")
+      .builder[Props[T]]("button")
       .render_P {
-        case Props(size, pressed, label, fn) ⇒
+        case Props(t, pressed, clicked, label, fn) ⇒
           button(
             label,
             Style.sizeButton,
-            ^.className := s"button-$size ${if (pressed) "active" else ""}",
-            ^.onMouseEnter --> fn(_.copy(hover =   size)),
-            ^.onMouseLeave --> fn(_.copy(hover = None )),
-            ^.onClick      --> fn(_.copy(click =   size)),
+            if (pressed) Style.pressed else Style.none,
+            ^.className := s"button-$t",
+            ^.onMouseEnter --> fn(_.copy(hover =    t)),
+            //^.onMouseLeave --> fn(_.copy(hover = None)),
+            ^.onClick      -->
+              fn(
+                if (clicked)
+                  _.copy(click = None)
+                else
+                  _.copy(click =    t)
+              ),
             ^.onFocus      ==> { e: ReactEvent ⇒ e.target.asInstanceOf[HTMLElement].blur(); Callback() },
           )
       }
