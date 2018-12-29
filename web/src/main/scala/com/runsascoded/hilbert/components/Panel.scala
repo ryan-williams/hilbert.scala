@@ -1,6 +1,6 @@
 package com.runsascoded.hilbert.components
 
-import com.runsascoded.hilbert.components.Picker.{ Permutations, Sizes, State }
+import com.runsascoded.hilbert.components.Page.{ Permutations, Sizes, State }
 import com.runsascoded.hilbert.css.Style
 import com.runsascoded.hilbert.mix.Size
 import com.runsascoded.hilbert.mix.Size._
@@ -22,7 +22,7 @@ object Panel {
           Permutations,
           Permutation,
           Option[Color],
-          (State ⇒ State) ⇒ Callback,
+          Mod[State],
         )
       ](
         "Panel"

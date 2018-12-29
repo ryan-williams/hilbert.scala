@@ -13,7 +13,7 @@ object Button {
     pressed: Boolean,
     clicked: Boolean,
     label: String,
-    fn: (Preview[T] ⇒ Preview[T]) ⇒ Callback
+    fn: Mod[Preview[T]]
   )
 
   def apply[T] =
