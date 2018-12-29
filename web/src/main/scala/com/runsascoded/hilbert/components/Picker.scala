@@ -18,21 +18,11 @@ import scala.collection.mutable
 
 object Picker {
 
-  case class Preview[T](
-    hover: Option[T] = None,
-    click: Option[T] = None
-  ) {
-    def t: Option[T] = click.orElse(hover)
-  }
-  object Preview {
-    implicit def unwrap[T](preview: Preview[T]): Option[T] = preview.t
-  }
-
   type Sizes = Preview[Size]
-  val Sizes = Preview
+   val Sizes = Preview
 
   type Permutations = Preview[Permutation]
-  val Permutations = Preview
+   val Permutations = Preview
 
   case class State(
            sizes:          Sizes  = Sizes(),
