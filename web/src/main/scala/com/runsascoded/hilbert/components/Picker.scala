@@ -38,8 +38,6 @@ object Picker {
 
   class Backend($: BackendScope[Size, State]) {
 
-    import $.modState
-
     var drawnStatus: Option[Drawn] = None
     val imgs = mutable.Map[Drawn, ImageData]()
 
@@ -89,8 +87,6 @@ object Picker {
       } {
         draw(canvas)
       }
-
-      import Size._
       div(
         <.canvas(
           Style.canvas,
@@ -111,89 +107,13 @@ object Picker {
               }
           }
         ),
-        div(
-          Style.panel,
-          color.map {
-            case Color(r, g, b) ⇒
-              div(
-                Style.color,
-                div(
-                  Style.thumb,
-                  ^.backgroundColor := s"rgb($r,$g,$b)",
-                ),
-                pre(
-                  Style.pre,
-                  Seq(r, g, b)
-                  .map(
-                    "% 3d".format(_).takeRight(3)
-                  )
-                  .mkString("rgb(", ",", ")")
-                ),
-                pre(
-                  Style.pre,
-                  {
-                    val hexs =
-                      Seq(r, g, b)
-                        .map { "%02x".format(_) }
-
-                    (
-                      // shorten to one-char hex-strings if all colors' hex-strings allow it (i.e. are two copies of the
-                      // same character)
-                      if (
-                        hexs.forall {
-                          s ⇒ s.apply(0) == s.apply(1)
-                        }
-                      )
-                        hexs.map(_.drop(1))
-                      else
-                        hexs
-                    )
-                    .mkString("#", "", "")
-                  }
-                )
-              )
-          },
-          {
-            def button(sz: Size, label: String) =
-              Button[Size](
-                Button.Props(
-                  sz,
-                  size == sz,
-                  sizes.click.contains(sz),
-                  label,
-                  fn ⇒ modState(_.copy(sizes = fn(sizes)))
-                )
-              )
-
-            div(
-              Style.buttons,
-              button(`1`, "8x8"),
-              button(`2`, "64x64"),
-              button(`3`, "512x512"),
-            )
-          },
-          {
-            def button(p: Permutation, label: String) =
-              Button[Permutation](
-                Button.Props(
-                  p,
-                  p == permutation,
-                  permutations.click.contains(p),
-                  label,
-                  fn ⇒ modState(_.copy(permutations = fn(permutations)))
-                )
-              )
-
-            div(
-              Style.buttons,
-              button(Permutation(0, 1, 2), "rgb"),
-              button(Permutation(0, 2, 1), "rbg"),
-              button(Permutation(1, 0, 2), "grb"),
-              button(Permutation(1, 2, 0), "gbr"),
-              button(Permutation(2, 0, 1), "brg"),
-              button(Permutation(2, 1, 0), "bgr"),
-            )
-          }
+        Panel.component(
+          (
+            sizes, size,
+            permutations, permutation,
+            (fn: State ⇒ State) ⇒ $.modState(fn),
+            color
+          )
         )
       )
     }

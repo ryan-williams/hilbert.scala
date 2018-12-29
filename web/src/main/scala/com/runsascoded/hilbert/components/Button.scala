@@ -1,6 +1,5 @@
 package com.runsascoded.hilbert.components
 
-import com.runsascoded.hilbert.components.Picker.Preview
 import com.runsascoded.hilbert.css.Style
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^.<._
