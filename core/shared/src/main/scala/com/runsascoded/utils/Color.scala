@@ -1,4 +1,4 @@
-package com.runsascoded.hilbert.components
+package com.runsascoded.utils
 
 import com.runsascoded.math.Permutation
 

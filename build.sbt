@@ -4,6 +4,13 @@ default(
   `2.12`.only
 )
 
+lazy val cli =
+  project
+    .settings(
+
+    )
+    .dependsOn(core.jvm)
+
 lazy val core =
   cross
     .settings(
@@ -14,16 +21,11 @@ lazy val core =
     )
 lazy val `core-x` = core.x
 
-import scalajs.{ css, dom, react }
+import scalajs.{ css, react }
 
 lazy val web =
   project
     .settings(
-      versions(
-        dom → "0.9.6"
-      ),
-      react.  version := "1.3.1",
-      react.jsVersion := "16.5.1",
       scalaJSUseMainModuleInitializer := true,
       react,
       dep(
@@ -35,4 +37,4 @@ lazy val web =
       core.js
     )
 
-lazy val hilbert = root(`core-x`, web)
+lazy val hilbert = root(cli, `core-x`, web)

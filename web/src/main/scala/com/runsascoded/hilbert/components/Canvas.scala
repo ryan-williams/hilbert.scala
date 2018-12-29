@@ -1,7 +1,6 @@
 package com.runsascoded.hilbert.components
 
-import com.runsascoded.hilbert.mix.Size
-import org.scalajs.dom.{ CanvasRenderingContext2D, ImageData, html }
+import org.scalajs.dom.{ CanvasRenderingContext2D, html }
 
 case class Canvas(
   elem: html.Canvas,

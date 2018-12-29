@@ -1,16 +1,15 @@
 package com.runsascoded.hilbert.components
 
 import com.runsascoded.hilbert.css.Style
+import com.runsascoded.hilbert.mix
 import com.runsascoded.hilbert.mix.Size
-import com.runsascoded.hilbert.{ three, two }
 import com.runsascoded.math.Permutation
-import com.runsascoded.utils.Ints
-import hilbert._
+import com.runsascoded.utils.Color
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^.<._
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
-import org.scalajs.dom.raw.{ HTMLElement, ImageData }
+import org.scalajs.dom.raw.ImageData
 import org.scalajs.dom.{ CanvasRenderingContext2D, html }
 import scalacss.ScalaCssReact._
 import shapeless.the
@@ -19,17 +18,11 @@ import scala.collection.mutable
 
 object Picker {
 
-//  val size = 800
-
-//  sealed trait Color
-//  case class RGB(r: Int, g: Int, b: Int) extends Color
-//  case class HSV(h: Int, s: Int, v: Int) extends Color
-
   case class Preview[T](
     hover: Option[T] = None,
     click: Option[T] = None
   ) {
-    def t: Option[T] = click.orElse(hover) //hover.orElse(click)
+    def t: Option[T] = click.orElse(hover)
   }
   object Preview {
     implicit def unwrap[T](preview: Preview[T]): Option[T] = preview.t
@@ -53,36 +46,12 @@ object Picker {
     implicit def wrap(implicit size: Size, permutation: Permutation): Drawn = Drawn(size, permutation)
   }
 
-  class Backend($: BackendScope[Size, State])
-    extends Ints.syntax {
+  class Backend($: BackendScope[Size, State]) {
 
     import $.modState
 
     var drawnStatus: Option[Drawn] = None
     val imgs = mutable.Map[Drawn, ImageData]()
-
-    def color(c: Int, r: Int, n: Int, n2: Int)(implicit permutation: Permutation): Color = {
-      val three.P(_r, _g, _b) =
-        `3`(
-          `2`(
-            // top level should go right, down, left; this is true without a shift for n == 1 (in an 8x8 square, the top
-            // level is 2x2, which is two power-of-two flips from the bottom level), and each subsequent `n` adds 3
-            // powers of 2, requiring toggling the orientation
-            two.P(c, r) >> (n - 1)
-          )
-          // Keep the highest level constant: red is the least significant axis, then green, then blue.
-          // When n == 1 (4x4x4 cube), the top-level dimension is one from the RGB bottom level, namely GBR, so we shift
-          // by 1.
-          // Subsequent cases multiply the cube's edge-length by 4, requiring two additional shifts.
-        ) >> (2*n - 1)
-      Color(
-        _r * 255 / (n2 - 1),
-        _g * 255 / (n2 - 1),
-        _b * 255 / (n2 - 1)
-      )(
-        permutation
-      )
-    }
 
     def draw(canvas: Canvas)(implicit size: Size, permutation: Permutation) = {
       val Size(n, n2, n3, _) = size
@@ -98,7 +67,7 @@ object Picker {
               for {
                 r ← 0 until n3
                 c ← 0 until n3
-                Color(red, green, blue) = color(c, r, n, n2)
+                Color(red, green, blue) = mix.color(c, r, n, n2)
                 (x1, x2) = (c * w / n3, (c+1) * w / n3)
                 (y1, y2) = (r * h / n3, (r+1) * h / n3)
                 x ← x1 until x2
@@ -146,7 +115,7 @@ object Picker {
                   val c = x * n3 / w toInt
                   val r = y * n3 / h toInt
 
-                  val color = this.color(c, r, n, n2)
+                  val color = mix.color(c, r, n, n2)
 
                   $.modState(_.copy(color = color))
               }
