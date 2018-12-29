@@ -21,14 +21,14 @@ object Panel {
           Size,
           Permutations,
           Permutation,
+          Option[Color],
           (State ⇒ State) ⇒ Callback,
-          Option[Color]
         )
       ](
         "Panel"
       )
       .render_P {
-        case (sizes, size, permutations, permutation, modState, color) ⇒
+        case (sizes, size, permutations, permutation, color, modState) ⇒
           div(
             Style.panel,
             color
