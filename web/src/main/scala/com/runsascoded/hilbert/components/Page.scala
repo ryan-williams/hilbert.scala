@@ -31,7 +31,7 @@ object Page {
       implicit val permutation = permutations.t.getOrElse(Permutation(0, 1, 2))
 
       div(
-        Canvas.component((
+        CanvasImpl.component((
           size,
           permutation,
           mod

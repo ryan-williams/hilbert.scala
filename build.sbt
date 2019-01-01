@@ -1,15 +1,9 @@
 default(
   group("com.runsascoded"),
-  `2.12`.version := "2.12.8",
-  `2.12`.only
+  `2.12`.version := "2.12.8"
 )
 
-lazy val cli =
-  project
-    .settings(
-
-    )
-    .dependsOn(core.jvm)
+lazy val cli = project.dependsOn(core.jvm)
 
 lazy val core =
   cross
@@ -26,15 +20,36 @@ import scalajs.{ css, react }
 lazy val web =
   project
     .settings(
-      scalaJSUseMainModuleInitializer := true,
       react,
+      webpackBundlingMode := BundlingMode.LibraryAndApplication(),
       dep(
-        css.react
+        css.react,
       ),
     )
     .enablePlugins(JS, ScalaJSBundlerPlugin)
     .dependsOn(
-      core.js
+      core.js,
+      worker
     )
 
-lazy val hilbert = root(cli, `core-x`, web)
+lazy val `web-worker` =
+  project
+    .in(new File("web/worker"))
+    .settings(
+      scalaJSUseMainModuleInitializer := true
+    )
+    .enablePlugins(ScalaJSPlugin)
+    .dependsOn(web, worker)
+
+lazy val worker =
+  project
+    .settings(
+      dep(
+        boopickle,
+        magnolia,
+        scalajs.dom
+      )
+    )
+    .enablePlugins(JS)
+
+lazy val hilbert = root(cli, `core-x`, web, `web-worker`, worker)

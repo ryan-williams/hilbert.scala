@@ -1,22 +1,21 @@
 package com.runsascoded.hilbert.components
 
+import boopickle.Default._
 import com.runsascoded.hilbert.css.Style
 import com.runsascoded.hilbert.mix
 import com.runsascoded.hilbert.mix.Size
 import com.runsascoded.math.Permutation
-import com.runsascoded.utils.Color
+import com.runsascoded.worker.{ Transport, Worker }
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import org.scalajs.dom.raw.ImageData
-import org.scalajs.dom.{ CanvasRenderingContext2D, html }
+import org.scalajs.dom
+import org.scalajs.dom.{ CanvasRenderingContext2D, ImageData, html }
 import scalacss.ScalaCssReact._
 import shapeless.the
 
-object Canvas {
-  case class Drawn(size: Size, permutation: Permutation)
-  object Drawn {
-    implicit def wrap(implicit size: Size, permutation: Permutation): Drawn = Drawn(size, permutation)
-  }
+import scala.scalajs.js
+
+object CanvasImpl {
 
   type Sizes = Preview[Size]
    val Sizes = Preview
@@ -30,53 +29,18 @@ object Canvas {
     Mod[Page.State]
   )
 
-  case class Canvas(
-    elem: html.Canvas,
-    ctx: CanvasRenderingContext2D,
-    w: Int,
-    h: Int,
-    img: ImageData
-  )
+  type To = (ImageData, Int, Int, Drawn)
+  type From = (Drawn, ImageData)
 
-  type Imgs = Map[Drawn, ImageData]
-  case class State(
-    canvas: Option[Canvas] = None,
-    drawn: Option[Drawn] = None,
-    imgs: Imgs = Map()
-  )
+  import shapeless.the
+  the[Transport[ImageData]]
+  the[Transport[(ImageData, Int, Int, Drawn)]]
 
-  class Backend($: BackendScope[Props, State]) {
+  val worker = new Worker[To, From]
 
-    def img(
-      ctx: CanvasRenderingContext2D,
-      w: Int,
-      h: Int
-    )(
-      implicit
-      size: Size,
-      permutation: Permutation
-    ) = {
-      val img = ctx.createImageData(w, h)
-      val data = img.data
-      val Size(n, n2, n3, _) = size
-      for {
-        r ← 0 until n3
-        c ← 0 until n3
-        Color(red, green, blue) = mix.color(c, r, n, n2)
-        (x1, x2) = (c * w / n3, (c+1) * w / n3)
-        (y1, y2) = (r * h / n3, (r+1) * h / n3)
-        x ← x1 until x2
-        y ← y1 until y2
-        idx = 4 * (w * y + x)
-      } {
-        data(idx    ) = red
-        data(idx + 1) = green
-        data(idx + 2) = blue
-        data(idx + 3) = 255
-      }
+  class Backend($: BackendScope[Props, CanvasState]) {
 
-      img
-    }
+    val backend = this
 
     def updateDrawn(
       canvas: Canvas,
@@ -94,7 +58,7 @@ object Canvas {
         imgs
           .get(drawn)
           .fold[(ImageData, Callback)] {
-            val img = this.img(ctx, w, h)
+            val img = Img(ctx, w, h)
 
             println(s"new canvas: $drawn")
             (
@@ -122,7 +86,7 @@ object Canvas {
       ) *> cb
     }
 
-    def render(props: Props, state: State): VdomElement = {
+    def render(props: Props, state: CanvasState): VdomElement = {
       implicit val (
         size @ Size(n, n2, n3, _),
         permutation,
@@ -132,7 +96,7 @@ object Canvas {
 
       val drawn = Drawn(size, permutation)
 
-      val State(canvas, _, _) = state
+      val CanvasState(canvas, _, _) = state
       for {
         Canvas(_, ctx, _, _, img) ← canvas
       } {
@@ -165,7 +129,7 @@ object Canvas {
   val component =
     ScalaComponent
       .builder[Props]("Picker")
-      .initialState(State())
+      .initialState(CanvasState())
       .renderBackend[Backend]
       .shouldComponentUpdate {
         p ⇒
@@ -182,7 +146,7 @@ object Canvas {
       .componentWillReceiveProps {
         p ⇒
           implicit val (size, permutation, _) = p.nextProps
-          val State(canvas, drawn, imgs) = p.state
+          val CanvasState(canvas, drawn, imgs) = p.state
           canvas
             .fold { Callback() } {
               canvas ⇒
@@ -218,7 +182,7 @@ object Canvas {
               .getContext("2d")
               .asInstanceOf[CanvasRenderingContext2D]
 
-          val img = backend.img(ctx, w, h)
+          val img = Img(ctx, w, h)
 
           val c =
             Canvas(
@@ -228,6 +192,29 @@ object Canvas {
               h,
               img
             )
+
+          worker.onMessage {
+            case (drawn, img) ⇒
+            println(s"received pre-computed: $drawn $img")
+            modState {
+              s ⇒
+                s.copy(
+                  imgs = s.imgs + (drawn → img)
+                )
+            }
+            .runNow()
+          }
+
+          import Size._
+          for {
+            size ← Seq(`1`,`2`,`3`).slice(1, 2)
+            perm ← Seq(0,1,2).permutations.map { case Seq(a, b, c) ⇒ Permutation(a, b, c) }.toVector
+            drawn = Drawn(size, perm)
+          } {
+            println(s"posting: $drawn")
+            worker ! ((ctx.createImageData(w, h), w, h, drawn))
+          }
+          println("done firing events")
 
           backend.updateDrawn(c, state.imgs) *> modState(_.copy(canvas = c))
       }
