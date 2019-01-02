@@ -5,15 +5,14 @@ import com.runsascoded.hilbert.css.Style
 import com.runsascoded.hilbert.mix
 import com.runsascoded.hilbert.mix.Size
 import com.runsascoded.math.Permutation
-import com.runsascoded.worker.{ Transport, Worker }
+import com.runsascoded.worker.Worker
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import org.scalajs.dom
 import org.scalajs.dom.{ CanvasRenderingContext2D, ImageData, html }
 import scalacss.ScalaCssReact._
 import shapeless.the
 
-import scala.scalajs.js
+import scala.collection.mutable
 
 object CanvasImpl {
 
@@ -32,13 +31,22 @@ object CanvasImpl {
   type To = (ImageData, Int, Int, Drawn)
   type From = (Drawn, ImageData)
 
-  import shapeless.the
-  the[Transport[ImageData]]
-  the[Transport[(ImageData, Int, Int, Drawn)]]
+  case class Canvas(
+    elem: html.Canvas,
+    ctx: CanvasRenderingContext2D,
+    w: Int,
+    h: Int,
+    img: ImageData
+  )
 
-  val worker = new Worker[To, From]
+  type Imgs = Map[Drawn, ImageData]
+  case class State(
+    canvas: Option[Canvas] = None,
+    drawn: Option[Drawn] = None,
+    imgs: Imgs = Map()
+  )
 
-  class Backend($: BackendScope[Props, CanvasState]) {
+  class Backend($: BackendScope[Props, State]) {
 
     val backend = this
 
@@ -86,7 +94,7 @@ object CanvasImpl {
       ) *> cb
     }
 
-    def render(props: Props, state: CanvasState): VdomElement = {
+    def render(props: Props, state: State): VdomElement = {
       implicit val (
         size @ Size(n, n2, n3, _),
         permutation,
@@ -96,7 +104,7 @@ object CanvasImpl {
 
       val drawn = Drawn(size, permutation)
 
-      val CanvasState(canvas, _, _) = state
+      val State(canvas, _, _) = state
       for {
         Canvas(_, ctx, _, _, img) ← canvas
       } {
@@ -129,7 +137,7 @@ object CanvasImpl {
   val component =
     ScalaComponent
       .builder[Props]("Picker")
-      .initialState(CanvasState())
+      .initialState(State())
       .renderBackend[Backend]
       .shouldComponentUpdate {
         p ⇒
@@ -146,15 +154,13 @@ object CanvasImpl {
       .componentWillReceiveProps {
         p ⇒
           implicit val (size, permutation, _) = p.nextProps
-          val CanvasState(canvas, drawn, imgs) = p.state
+          val State(canvas, drawn, imgs) = p.state
           canvas
             .fold { Callback() } {
               canvas ⇒
                 if (drawn.contains(Drawn(size, permutation)))
-                  {
-                    //println(s"already drawn: $drawn")
-                    Callback()
-                  }
+                  // correct canvas is already drawn
+                  Callback()
                 else
                   p
                     .backend
@@ -193,25 +199,49 @@ object CanvasImpl {
               img
             )
 
-          worker.onMessage {
-            case (drawn, img) ⇒
-            println(s"received pre-computed: $drawn $img")
-            modState {
-              s ⇒
-                s.copy(
-                  imgs = s.imgs + (drawn → img)
-                )
-            }
-            .runNow()
-          }
-
           import Size._
-          for {
-            size ← Seq(`1`,`2`,`3`).slice(1, 2)
-            perm ← Seq(0,1,2).permutations.map { case Seq(a, b, c) ⇒ Permutation(a, b, c) }.toVector
-            drawn = Drawn(size, perm)
-          } {
-            println(s"posting: $drawn")
+          val msgs =
+            mutable.Queue(
+              (
+                for {
+                  size ← Seq(`1`,`2`,`3`)
+                  perm ← Seq(0,1,2).permutations.map { case Seq(a, b, c) ⇒ Permutation(a, b, c) }.toVector
+                } yield
+                  Drawn(size, perm)
+              )
+              : _*
+            )
+
+          val numWorkers = 6
+
+          val workers =
+            for {
+              i ← 0 until numWorkers
+              worker = new Worker[To, From]
+            } yield {
+              worker.onMessage {
+                case (drawn, img) ⇒
+                  println(s"received pre-computed from worker $i: $drawn $img")
+                  if (msgs.nonEmpty) {
+                    val drawn = msgs.dequeue()
+                    println(s"re-enqueueing with worker $i: $drawn")
+                    worker ! ((ctx.createImageData(w, h), w, h, drawn))
+                  }
+                  modState {
+                    s ⇒
+                      s.copy(
+                        imgs = s.imgs + (drawn → img)
+                      )
+                  }
+                  .runNow()
+              }
+
+              worker
+            }
+
+          for { (worker, i) ← workers.zipWithIndex } {
+            val drawn = msgs.dequeue()
+            println(s"posting to worker $i: $drawn")
             worker ! ((ctx.createImageData(w, h), w, h, drawn))
           }
           println("done firing events")
