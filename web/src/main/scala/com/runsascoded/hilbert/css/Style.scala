@@ -49,7 +49,12 @@ object Style
   val canvas =
     style(
       float.left,
-       width(1280 px),
-      height(1280 px),
+       width(512 px),
+      height(512 px),
+    )
+
+  val image =
+    style(
+      float.left
     )
 }

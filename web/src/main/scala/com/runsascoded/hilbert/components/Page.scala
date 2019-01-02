@@ -16,9 +16,9 @@ object Page {
    val Permutations = Preview
 
   case class State(
-           sizes:          Sizes  = Sizes(),
-    permutations:   Permutations  = Permutations(),
-           color: Option[ Color] = None
+           sizes:          Sizes = Sizes(),
+    permutations:   Permutations = Permutations(),
+           color:          Color = Color(0, 0, 0)
   )
 
   class Backend($: BackendScope[Size, State]) {
@@ -31,10 +31,11 @@ object Page {
       implicit val permutation = permutations.t.getOrElse(Permutation(0, 1, 2))
 
       div(
-        CanvasImpl.component((
+        Image.component((
+//        Canvas.component((
           size,
           permutation,
-          mod
+          color ⇒ $.modState(_.copy(color = color))
         )),
         Panel.component((
           sizes, size,

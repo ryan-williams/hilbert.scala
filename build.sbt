@@ -24,6 +24,7 @@ lazy val web =
       webpackBundlingMode := BundlingMode.LibraryAndApplication(),
       dep(
         css.react,
+        hammerlab.io % "5.2.1"
       ),
     )
     .enablePlugins(JS, ScalaJSBundlerPlugin)

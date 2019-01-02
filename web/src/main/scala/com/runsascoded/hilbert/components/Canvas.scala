@@ -5,6 +5,7 @@ import com.runsascoded.hilbert.css.Style
 import com.runsascoded.hilbert.mix
 import com.runsascoded.hilbert.mix.Size
 import com.runsascoded.math.Permutation
+import com.runsascoded.utils.Color
 import com.runsascoded.worker.Worker
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -14,7 +15,7 @@ import shapeless.the
 
 import scala.collection.mutable
 
-object CanvasImpl {
+object Canvas {
 
   type Sizes = Preview[Size]
    val Sizes = Preview
@@ -25,7 +26,7 @@ object CanvasImpl {
   type Props = (
     Size,
     Permutation,
-    Mod[Page.State]
+    Color ⇒ Callback
   )
 
   type To = (ImageData, Int, Int, Drawn)
@@ -98,7 +99,7 @@ object CanvasImpl {
       implicit val (
         size @ Size(n, n2, n3, _),
         permutation,
-        modState
+        handleColor
       )
       = props
 
@@ -127,7 +128,7 @@ object CanvasImpl {
 
                 val color = mix.color(c, r, n, n2)
 
-                modState(_.copy(color = color))
+                handleColor(color)
             }
         }
       )
