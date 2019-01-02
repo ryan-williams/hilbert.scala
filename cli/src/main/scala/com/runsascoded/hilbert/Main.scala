@@ -3,14 +3,12 @@ package com.runsascoded.hilbert
 import java.awt.image.BufferedImage
 import java.io.File
 
-import com.runsascoded.hilbert.mix.Size
-import com.runsascoded.hilbert.three.Point
+import com.runsascoded.hilbert.mix.{ Size, color }
 import com.runsascoded.math.Permutation
 import com.runsascoded.utils.Color
 import hammerlab.iterator._
-import hilbert._
 import javax.imageio.ImageIO
-import mix.color
+
 import scala.Array.fill
 
 object Main {
