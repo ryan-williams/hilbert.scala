@@ -13,25 +13,28 @@ import scala.Array.fill
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val W = 512
-    val H = 512
-    val img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB)
-
     import Size._
-    val sizes = Seq(`1`, `2`, `3`)
+    val sizes = Seq(`1`, `2`, `3`, `4`)
 
     val permutations =
       Seq(0, 1, 2)
         .permutations
         .toVector
 
-    val overwrite = true
+    val overwrite = false
 
-    println(s"Dimensions: ${W}x$H")
     for {
       Size(n, n2, n3, _) ← sizes
+      dimension ← Seq(1 << 9, 1 << 12)
+      if dimension >= n3
+      fmt ← Seq("jpg", "png")
     } {
-      println(s"Size $n…")
+      val W = dimension
+      val H = dimension
+
+      println(s"Size $n, fmt $fmt, ${W}x$H…")
+
+      val img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB)
 
       val R = n3
       val C = n3
@@ -62,7 +65,7 @@ object Main {
 
             val perm = p.map("rgb"(_)).mkString
             print(s"\tpermutation $perm…")
-            val out = new File(s"hilbert-$n3-$W-$perm.jpg")
+            val out = new File(s"../web/imgs/hilbert-$n3-$W-$perm.$fmt")
             if (!overwrite && out.exists())
               println("found!")
             else {
@@ -84,7 +87,7 @@ object Main {
               }
 
               print(s"\t\tWriting to $out…")
-              ImageIO.write(img, "jpg", out)
+              ImageIO.write(img, fmt, out)
               println(" done!")
             }
         }
